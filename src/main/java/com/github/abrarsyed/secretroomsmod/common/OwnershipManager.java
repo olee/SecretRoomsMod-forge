@@ -21,7 +21,7 @@ import java.util.zip.GZIPOutputStream;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
-import net.minecraftforge.common.DimensionManager;
+import net.minecraft.world.WorldServer;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.UsernameCache;
 import net.minecraftforge.event.world.WorldEvent;
@@ -168,7 +168,7 @@ public class OwnershipManager
         if (FMLCommonHandler.instance().getEffectiveSide().isClient())
             return;
 
-        File save = getSaveFile(e.world);
+        File save = getSaveFile((WorldServer) e.world);
         int dimid = e.world.provider.dimensionId;
 
         // create data.
@@ -222,7 +222,7 @@ public class OwnershipManager
         if (FMLCommonHandler.instance().getEffectiveSide().isClient())
             return;
 
-        saveWorld(e.world);
+        saveWorld((WorldServer) e.world);
     }
     
     public static EntityPlayer getPlayerFromId(UUID id)
@@ -244,16 +244,15 @@ public class OwnershipManager
         if (FMLCommonHandler.instance().getEffectiveSide().isClient())
             return;
 
-        saveWorld(e.world);
+        saveWorld((WorldServer) e.world);
         ownership.remove(e.world.provider.dimensionId);
         PacketManager.sendToAll(new PacketSyncOwnership(e.world.provider.dimensionId));
     }
 
-    private void saveWorld(World world)
+    private void saveWorld(WorldServer world)
     {
         File save = getSaveFile(world);
         int dimid = world.provider.dimensionId;
-        LOG.debug("Saving ownership data for dimension {} to {}", dimid, save);
 
         Map<BlockLocation, UUID> map = ownership.get(dimid);
         
@@ -284,19 +283,9 @@ public class OwnershipManager
         }
     }
 
-    private File getSaveFile(World world)
+    private File getSaveFile(WorldServer world)
     {
-        String worldSaveFolder = world.provider.getSaveFolder();
-        if (worldSaveFolder == null)
-        {
-            worldSaveFolder = "";
-        }
-        else
-        {
-            worldSaveFolder = "/" + worldSaveFolder;
-        }
-
-        return new File(DimensionManager.getCurrentSaveRootDirectory() + worldSaveFolder, FILE_NAME);
+        return new File(world.getChunkSaveLocation(), FILE_NAME);
     }
 
     private DataOutputStream getDataOut(File file) throws FileNotFoundException, IOException
